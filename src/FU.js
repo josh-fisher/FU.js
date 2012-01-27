@@ -184,12 +184,12 @@
 		//Required variables
 		var fileType;
 		var loadMechanism;
-		var fileOrFilePath;
 		var remoteURL;
 		var localURL;
 		var fileName;
 		var file;
 		var temporary;
+		var returnType; //fileEntry, file, url, data
 		
 		//Optional Callbacks
 		var loaded = params.loaded ? params.loaded : Loaded;
@@ -211,6 +211,7 @@
 			localURL = params.localURL;
 			fileName = params.fileName;
 			file = params.file;
+			returnType = params.returnType;
 		}
 		
 		//Load based on the inputted Loading mechanism
@@ -312,9 +313,9 @@
 			
 			//Read by user supplied File Type
 			if(fileType === FU.FILE_TYPE.TXT)
-					reader.readAsText(file);	
-				else
-					reader.readAsBinaryString(file);
+				reader.readAsText(file);	
+			else
+				reader.readAsBinaryString(file);
 		};
 		
 		/*
@@ -331,41 +332,48 @@
 			else
 				fs = FU.FileSystem;
 				
-			if(params.file){
-				fs.root.getFile(file.fullPath, {}, function(fileEntry) {
-				    // Get a File object representing the file,
+			function returnData(fileEntry){
+				if(params.returnType && returnType === "fileEntry"){
+					loaded(fileEntry);
+				}
+				else if(params.returnType && returnType === "url"){
+					loaded(fileEntry.toURL());
+				}
+				else{
+					// Get a File object representing the file,
 				    // then use FileReader to read its contents.
 				    fileEntry.file(function(loadedFile){
-				    	//Define file
-			   			file = loadedFile;
-			   			
-			   			//Load the file.
-				    	File_Load();
+				    	if(params.returnType && returnType === "file"){
+							loaded(loadedFile);
+						}
+						else{
+							//Define file
+				   			file = loadedFile;
+				   			params.file = loadedFile;
+				   			
+				   			//Load the file.
+					    	File_Load(file);
+						}
 				    }, errorHandler);
-			
-				}, errorHandler);	
+				}
+			}
+				
+			if(params.file){
+				fs.root.getFile(file.fullPath, {}, function(fileEntry) {
+					returnData(fileEntry);
+				}, errorHandler);
 			}
 			else if(params.localURL){
 				//Add root to filepath;
 				var filePath = FU.LocalRoot.concat("/" + localURL);
 
 				fs.root.getFile(filePath, {}, function(fileEntry) {
-				    // Get a File object representing the file,
-				    // then use FileReader to read its contents.
-				    fileEntry.file(function(loadedFile){
-				    	//Define file
-			   			file = loadedFile;
-			   			
-			   			//Load the file.
-				    	File_Load();
-				    }, errorHandler);
-			
+				    returnData(fileEntry);
 				}, errorHandler);	
 			}
 			else if(params.fileName){
-				FU.GetFileFromFilename(fileName, temporary, function(loadedFile){
-					//Fire Callback
-					loaded(loadedFile, loadedFile.name);
+				FU.GetFileFromFilename(fileName, temporary, function(fileEntry){
+					returnData(fileEntry);
 				})
 			}
 		};
