@@ -25,6 +25,7 @@
 	
 	FU.CLIENT_FEATURES = {
 		Workers: false,
+		InlineWorkers: false,
 		FilesystemAPI: false,
 		FileAPI: false,
 		XHR: false
@@ -34,14 +35,24 @@
 	if(window.Worker)
 		FU.CLIENT_FEATURES.Workers = true;
 		
+	if(window.Worker
+		&& (window.MozBlobBuilder || window.WebKitBlobBuilder)
+		&& (window.webkitURL || window.URL))
+	{
+		window.BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder;
+		FU.CLIENT_FEATURES.InlineWorkers = true;
+	}
+		
 	if(window.File && window.FileReader && window.FileList && window.Blob)
 		FU.CLIENT_FEATURES.FileAPI = true;
 	
-	if((window.requestFileSystem || window.webkitRequestFileSystem) && (window.BlobBuilder || window.WebKitBlobBuilder))
+	if((window.requestFileSystem || window.webkitRequestFileSystem) 
+		&& (window.MozBlobBuilder || window.WebKitBlobBuilder)
+		&& (window.webkitURL || window.URL))
 	{
 		window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
+		window.BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder;
 		FU.CLIENT_FEATURES.FilesystemAPI = true;
-		window.BlobBuilder = window.WebKitBlobBuilder;
 	}
 
 	if(window.XMLHttpRequest)
@@ -307,8 +318,11 @@
 
 			//Create a Sliced File
 			if(params.sliceParams !== undefined){
-				//Slice and read data file
-				file = file.webkitSlice(params.sliceParams.startIndex, params.sliceParams.stopIndex)
+				if (file.webkitSlice) {
+					file = file.webkitSlice(params.sliceParams.startIndex, params.sliceParams.stopIndex)
+				} else if (file.mozSlice) {
+					file = file.mozSlice(params.sliceParams.startIndex, params.sliceParams.stopIndex)
+				}
 			}
 			
 			//Read by user supplied File Type

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+		Remove this if you use the .htaccess -->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<title>LoadXHR</title>
+		<meta name="description" content="" />
+		<meta name="author" content="JFisher" />
+		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+		<link rel="shortcut icon" href="/favicon.ico" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+	</head>
+	<body>
+		<script src="../dist/FU.js" type=text/javascript></script>
+		<div>
+			<header>
+				<h1>Load Save Load Example</h1>
+			</header>
+			<nav>
+				<p>
+					This example demonstrates the ability to load remote files.
+				</p>
+				<input type="button" value="Run Example" onClick="run();">
+					<script type="text/javascript">
+						function run(){
+							FU.LocalRoot = "MyAppName";
+							
+							FU.LoadFile({
+								fileType: FU.FILE_TYPE.TXT,
+								loadMechanism: FU.LOAD_MECHANISM.XHR,
+								remoteURL: "http://localhost:8080/README.md",
+								loaded: function remoteAssetDataLoaded(data){
+									document.write("</br></br>File Loaded Via XHR </br</br> " + data);
+								}
+							});	
+						}
+					</script>
+			</nav>
+			<div></div>
+			<footer>
+			</footer>
+		</div>
+	</body>
+</html>
