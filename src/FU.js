@@ -79,15 +79,23 @@
 	 */
 	FU.InitLocalFileSystem = function(callback){
 		function onInitFs(fs){
+			console.log("init persistant fs");
 			FU.FileSystem = fs;
 
-		    FU.CreateDirectory("", false, callback);
+		    FU.CreateDirectory("", false, function(){});
+		    
+		    window.webkitStorageInfo.requestQuota(window.TEMPORARY, FU.TemporarySize, function(grantedBytes) {
+			window.requestFileSystem(window.TEMPORARY, grantedBytes, onInitTempFs, errorHandler);
+			}, function(e) {
+				console.log('Error', e);
+			});
 		}
 		
 		function onInitTempFs(fs){
+			console.log("init temp fs");
 			FU.TempFileSystem = fs;
 
-		    FU.CreateDirectory("", true, function(){});
+		    FU.CreateDirectory("", true, function(){console.log("temp init");});
 		}
 		
 		window.webkitStorageInfo.requestQuota(PERSISTENT, FU.PersistantSize, function(grantedBytes) {
@@ -96,11 +104,7 @@
 			console.log('Error', e);
 		});
 		
-		window.webkitStorageInfo.requestQuota(window.TEMPORARY, FU.TemporarySize, function(grantedBytes) {
-			window.requestFileSystem(window.TEMPORARY, grantedBytes, onInitTempFs, errorHandler);
-		}, function(e) {
-			console.log('Error', e);
-		});
+		
 	};
 	
 	/**********************************************************************************************************************
@@ -348,17 +352,17 @@
 				
 			function returnData(fileEntry){
 				if(params.returnType && returnType === "fileEntry"){
-					loaded(fileEntry);
+					loaded(fileEntry, fileEntry.name);
 				}
 				else if(params.returnType && returnType === "url"){
-					loaded(fileEntry.toURL());
+					loaded(fileEntry.toURL(), fileEntry.name);
 				}
 				else{
 					// Get a File object representing the file,
 				    // then use FileReader to read its contents.
 				    fileEntry.file(function(loadedFile){
 				    	if(params.returnType && returnType === "file"){
-							loaded(loadedFile);
+							loaded(loadedFile, fileEntry.name);
 						}
 						else{
 							//Define file
@@ -438,7 +442,7 @@
 		var onprogress = params.onprogress ? params.onprogress : OnProgress;
 		var onabort = params.onabort ? params.onabort : OnAbort;
 
-  		var fileDir = "/" + FU.LocalRoot + filePath;
+  		var fileDir = "/" + FU.LocalRoot + "/" + filePath;
   		
 	    if(temporary){
 	    	var uuid;
@@ -451,12 +455,15 @@
 		    uuid = UUID.generate();
 		    
 		    //Parse the path
-		    var parsedURI = parseUri(filePath)
+		    var parsedURI = parseUri(fileDir)
 		    
 		    ///Create a unique folder for the saved file (So that one does not get overwritten)
-		    var tmpDir = fileDir.concat(parsedURI.directory, "/", uuid, "/", parsedURI.file);
+		    var dir = "";
+		    var tmpDir  = dir.concat(uuid, "/");
 		    
-		    Save(tmpDir);
+		    FU.CreateDirectory(tmpDir, true, function directoryCreated(){
+		    	Save(fileDir);
+		    });
 		}
 		else{
 			Save(fileDir);
