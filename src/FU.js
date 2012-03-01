@@ -79,7 +79,6 @@
 	 */
 	FU.InitLocalFileSystem = function(callback){
 		function onInitFs(fs){
-			console.log("init persistant fs");
 			FU.FileSystem = fs;
 
 		    FU.CreateDirectory("", false, function(){});
@@ -92,10 +91,11 @@
 		}
 		
 		function onInitTempFs(fs){
-			console.log("init temp fs");
 			FU.TempFileSystem = fs;
 
-		    FU.CreateDirectory("", true, function(){console.log("temp init");});
+		    FU.CreateDirectory("", true, function(){});
+		    
+		    callback();
 		}
 		
 		window.webkitStorageInfo.requestQuota(PERSISTENT, FU.PersistantSize, function(grantedBytes) {
@@ -279,11 +279,14 @@
 						}
 					}
 					else{
-						if(this.responseText != null){
-							responseData = this.responseText; 
-						}
-						else{
-							//Invalid response
+						if(this.responseText !== null && this.repsonseText !== ""){
+							//Create a Sliced File
+							if(params.sliceParams !== undefined){
+								responseData = this.responseText.slice(params.sliceParams.startIndex, params.sliceParams.stopIndex);
+							}
+							else{
+								responseData = this.responseText; 
+							}
 						}
 					}
 					
@@ -442,7 +445,7 @@
 		var onprogress = params.onprogress ? params.onprogress : OnProgress;
 		var onabort = params.onabort ? params.onabort : OnAbort;
 
-  		var fileDir = "/" + FU.LocalRoot + "/" + filePath;
+  		var fileDir = "/" + FU.LocalRoot + "/";
   		
 	    if(temporary){
 	    	var uuid;
@@ -458,14 +461,15 @@
 		    var parsedURI = parseUri(fileDir)
 		    
 		    ///Create a unique folder for the saved file (So that one does not get overwritten)
-		    var dir = "";
-		    var tmpDir  = dir.concat(uuid, "/");
+		    var tmpDir  = uuid.concat("/");
+		    fileDir = fileDir.concat(tmpDir, filePath);
 		    
 		    FU.CreateDirectory(tmpDir, true, function directoryCreated(){
 		    	Save(fileDir);
 		    });
 		}
 		else{
+			fileDir += filePath;
 			Save(fileDir);
 		}
 		
